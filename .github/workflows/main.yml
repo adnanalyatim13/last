@@ -1,0 +1,30 @@
+name: CI
+on: [push, workflow_dispatch]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Update and Install Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y wget unzip
+    - name: Download Ngrok
+      run: wget https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.zip -O ngrok-v3-stable-linux-amd64.zip
+    - name: Extract Ngrok
+      run: unzip ngrok-v3-stable-linux-amd64.zip
+    - name: Authenticate Ngrok
+      run: ./ngrok authtoken $NGROK_AUTH_TOKEN
+      env:
+        NGROK_AUTH_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
+    - name: Install and Start SSH Server
+      run: |
+        sudo apt-get install -y openssh-server
+        sudo systemctl enable ssh
+        sudo systemctl start ssh
+    - name: Create User with Password
+      run: |
+        sudo useradd -m runneradmin
+        echo 'runneradmin:P@ssw0rd!' | sudo chpasswd
+        sudo usermod -aG sudo runneradmin
+    - name: Open Tunnel with Ngrok
+      run: ./ngrok tcp 22
